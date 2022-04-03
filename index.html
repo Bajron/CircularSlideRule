@@ -10,18 +10,30 @@
 </head>
 
 <body>
-    <form>
-        <label for="lhs">Outer</label>
-        <input name="lhs" type="input" value="1">
-        <label for="rhs">Inner</label>
-        <input name="rhs" type="input" value="1">
-        <input type="button" value="Multiply">
-        <input type="button" value="Divide">
-        <input type="input" disabled="disable" name="output" value="1">
+    <form id="inputForm">
+        <fieldset>
+            <label for="lhs">Left</label>
+            <input name="lhs" id="lhs" type="input" value="1">
+            <fieldset id="operation-set">
+                <legend>Operation</legend>
+                <input type="button" id="multiply-button" value="Multiply" onclick="multiply(true);">
+                <input type="button" id="divide-button" value="Divide" onclick="divide(true);">
+                <input type="button" id="reset-button" value="Reset" onclick="resetCircles(true);">
+            </fieldset>
+            <label for="rhs">Right</label>
+            <input name="rhs" id="rhs" type="input" value="1">
+
+            <fieldset id="output-set">
+                <legend>Output</legend>
+                <label for="output">Result</label>
+                <input type="input" readonly="readonly" name="output" id="output" value="1">
+            </fieldset>
+        </fieldset>
     </form>
     <canvas class="appCanvas" id="csrCanvas">
         <p>Circular sliderule goes here. If you see this, the technology is still not there, sorry ;(</p>
     </canvas>
+
 </body>
 
 </html>

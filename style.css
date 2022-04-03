@@ -3,8 +3,31 @@ body {
     overflow: hidden;
 }
 
+#inputForm fieldset {
+    border-radius: 25px;
+    width: 67%;
+    margin: auto;
+    text-align: center;
+}
+#inputForm #operation-set {
+    width: 5em;
+    text-align: center;
+    display: inline-block;
+    vertical-align: middle;
+}
+#inputForm input {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 4px;
+}
+#inputForm label {
+    display: none;
+}
 #csrCanvas {
     width: 80%;
     height: 80%;
+    display: block;
     margin: auto;
+    border: 1px solid black;
+    border-radius: 25px;
 }
