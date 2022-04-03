@@ -252,6 +252,9 @@ function canvasMouseUp(ev) {
 canvas.onmousedown = canvasMouseDown;
 canvas.onmousemove = canvasMouseUpdate;
 canvas.onmouseup = canvasMouseUp;
+canvas.touchstart = canvasMouseDown;
+canvas.touchmove = canvasMouseUpdate;
+canvas.touchend = canvasMouseUp;
 
 function runAnimation() {
     if (animation.i >= animation.steps) {
