@@ -1,0 +1,10 @@
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+#csrCanvas {
+    width: 80%;
+    height: 80%;
+    margin: auto;
+}

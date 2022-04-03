@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This is going to be a circular slide rule app</title>
+    <script src="script.js" defer></script>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <form>
+        <label for="lhs">Outer</label>
+        <input name="lhs" type="input" value="1">
+        <label for="rhs">Inner</label>
+        <input name="rhs" type="input" value="1">
+        <input type="button" value="Multiply">
+        <input type="button" value="Divide">
+        <input type="input" disabled="disable" name="output" value="1">
+    </form>
+    <canvas class="appCanvas" id="csrCanvas">
+        <p>Circular sliderule goes here. If you see this, the technology is still not there, sorry ;(</p>
+    </canvas>
+</body>
+
+</html>
