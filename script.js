@@ -187,8 +187,15 @@ var canvasClicked = null;
 
 function getClickFromEvent(ev) {
     let t = ctx.getTransform();
-    let xIn = (ev.offsetX * width / canvas.clientWidth - t.e) / t.a;
-    let yIn = (ev.offsetY * height / canvas.clientHeight - t.f) / t.d;
+    var xIn = (ev.offsetX * width / canvas.clientWidth - t.e) / t.a;
+    var yIn = (ev.offsetY * height / canvas.clientHeight - t.f) / t.d;
+
+    if (ev.type.startsWith('touch')) {
+        let touch = ev.changedTouches[0];
+        let bb = canvas.getBoundingClientRect();
+        xIn = ((touch.clientX - bb.left) * width / canvas.clientWidth - t.e) / t.a;
+        yIn = ((touch.clientY - bb.top) * height / canvas.clientHeight - t.f) / t.d;
+    }
 
     let clickedInner = (xIn * xIn + yIn * yIn < Math.pow(inner.radius, 2));
     let clickedOuter = (xIn * xIn + yIn * yIn < Math.pow(outer.radius + outer.frameDistance, 2));
@@ -252,9 +259,9 @@ function canvasMouseUp(ev) {
 canvas.onmousedown = canvasMouseDown;
 canvas.onmousemove = canvasMouseUpdate;
 canvas.onmouseup = canvasMouseUp;
-canvas.touchstart = canvasMouseDown;
-canvas.touchmove = canvasMouseUpdate;
-canvas.touchend = canvasMouseUp;
+canvas.ontouchstart = canvasMouseDown;
+canvas.ontouchmove = canvasMouseUpdate;
+canvas.ontouchend = canvasMouseUp;
 
 function runAnimation() {
     if (animation.i >= animation.steps) {
