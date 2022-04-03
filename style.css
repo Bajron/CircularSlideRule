@@ -3,11 +3,13 @@ body {
     overflow: hidden;
 }
 
-#inputForm fieldset {
-    border-radius: 25px;
-    width: 67%;
+#inputForm {
+    width: 600px;
     margin: auto;
     text-align: center;
+}
+#inputForm fieldset {
+    border-radius: 25px;
 }
 #inputForm #operation-set {
     width: 5em;
@@ -23,6 +25,18 @@ body {
 #inputForm label {
     display: none;
 }
+
+#viewForm {
+    float: right;
+    width: 60px;
+    margin-right: 40px;
+}
+#zoom-set input[type=button] {
+    width: 40px;
+    height: 40px;
+    margin: 10px;
+}
+
 #csrCanvas {
     width: 80%;
     height: 80%;

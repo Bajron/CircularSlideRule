@@ -30,6 +30,13 @@
             </fieldset>
         </fieldset>
     </form>
+    <form id="viewForm">
+        <fieldset id="zoom-set">
+            <legend>Zoom</legend>
+            <input type="button" id="multiply-button" value="+" onclick="zoomIn(true);">
+            <input type="button" id="divide-button" value="-" onclick="zoomOut(true);">
+        </fieldset>
+    </form>
     <canvas class="appCanvas" id="csrCanvas">
         <p>Circular sliderule goes here. If you see this, the technology is still not there, sorry ;(</p>
     </canvas>

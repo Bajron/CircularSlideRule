@@ -1,10 +1,5 @@
 // CSR - cricular slide rule
 
-const canvas = document.querySelector('#csrCanvas');
-const width = canvas.width = window.innerWidth;
-const height = canvas.height = window.innerHeight;
-
-const ctx = canvas.getContext('2d');
 const PI = Math.PI
 
 function degToRad(degrees) {
@@ -13,7 +8,8 @@ function degToRad(degrees) {
 
 var inner = { x: 0, y: 0, radius: 200, tickLength: -20, rotation: 0, frameDistance: -150 };
 var outer = { x: 0, y: 0, radius: 200, tickLength: 20, rotation: 0, frameDistance: 50 };
-
+/// log2 of actual scaling
+var zoomLevel = 0;
 var animation = { i: 0, steps: 240, pairs: new Array() };
 
 var ticks = Array(9);
@@ -21,10 +17,12 @@ ticks[0] = 0;
 for (let l = 1; l < ticks.length; ++l) {
     ticks[l] = Math.log10(l + 1);
 }
-var labels = Array(9);
-for (let l = 0; l < labels.length; ++l) {
-    labels[l] = (l + 1).toString(10);
-}
+
+const canvas = document.querySelector('#csrCanvas');
+const width = canvas.width = window.innerWidth;
+const height = canvas.height = 2 * (outer.radius + outer.frameDistance + 10);
+
+const ctx = canvas.getContext('2d');
 
 function prepareLabels(circle) {
     var labels = Array(9);
@@ -39,11 +37,38 @@ function prepareLabels(circle) {
     return labels;
 }
 
+function prepareZoomTicks(circle, level = 1) {
+    var labels = Array(9);
+    let rotations = -circle.rotation / (2 * PI);
+    let fullRotations = Math.floor(rotations);
+    let baseFactor = Math.pow(10, fullRotations);
+
+    let zoomedFactor = baseFactor / Math.pow(10, level - 1);
+    let result = Math.pow(10, -(outer.rotation / (2 * PI)))
+    let from = Math.floor(result / zoomedFactor);
+
+    let smallerFactor = zoomedFactor / 10;
+    let show = smallerFactor < 1 ? (-fullRotations + level) : 0;
+
+    let divisions = (level > 2) ? 2 : 10;
+
+    var ticks = Array(divisions - 1);
+    var labels = Array(divisions - 1);
+    for (let l = 0; l < ticks.length; ++l) {
+        ticks[l] = Math.log10(from + (l + 1) / divisions);
+        labels[l] = (from * zoomedFactor + (l + 1) * zoomedFactor / divisions).toFixed(show).toString(10);
+    }
+
+    return { 'ticks': ticks, 'labels': labels };
+}
+
 /**
  * @param {*} ticks Normalized to [0, 1)
  * @param {*} labels Optional text labels, must match ticks
  */
-function drawCircleTicks(circle, ticks, labels = null) {
+function drawCircleTicks(circle, ticks, tickScale = 1, labels = null) {
+    let tickLength = circle.tickLength * tickScale;
+
     for (let ti in ticks) {
         let t = ticks[ti]
         ctx.save()
@@ -53,13 +78,13 @@ function drawCircleTicks(circle, ticks, labels = null) {
 
         ctx.beginPath()
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, -circle.tickLength);
+        ctx.lineTo(0, -tickLength);
         ctx.stroke();
 
         if (labels !== null) {
             var m = ctx.measureText(labels[ti]);
 
-            ctx.translate(- m.width / 2, -circle.tickLength * 3 / 2);
+            ctx.translate(- m.width / 2, -tickLength * 3 / 2 + m.fontBoundingBoxDescent);
             ctx.fillText(labels[ti], 0, 0);
         }
 
@@ -84,8 +109,28 @@ function drawOuterCircle(circle) {
 
     ctx.strokeStyle = 'black';
     ctx.fillStyle = 'black';
-    drawCircleTicks(circle, ticks, prepareLabels(circle));
-    //drawCircleTicks(circle, ticks, labels);
+    ctx.font = '10px sans-serif';
+    drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
+
+    ctx.save();
+    if (zoomLevel < 1) {
+        let z = prepareZoomTicks(outer);
+        drawCircleTicks(circle, z.ticks);
+    } else {
+        for (let zl = 1; zl <= zoomLevel; ++zl) {
+            let z = prepareZoomTicks(outer, zl);
+            let tickScale = Math.pow(3 / 4, zl);
+            ctx.font = Math.round(10 * Math.pow(0.6, zl), 2) + 'px sans-serif';
+            ctx.lineWidth = 1 / Math.pow(2, zl);
+
+            if (zl % 2 == 1) {
+                drawCircleTicks(circle, z.ticks, tickScale, z.labels);
+            } else {
+                drawCircleTicks(circle, z.ticks, tickScale,);
+            }
+        }
+    }
+    ctx.restore();
 
     // Result guide
     ctx.beginPath();
@@ -114,13 +159,12 @@ function drawInnerCircle(circle) {
 
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'red';
-    drawCircleTicks(circle, ticks, prepareLabels(circle));
-    //drawCircleTicks(circle, ticks, labels);
+    drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
     ctx.restore();
 }
 
 function drawBoth() {
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
     ctx.fillStyle = 'white';
     drawOuterCircle(outer);
     ctx.fillStyle = 'yellow';
@@ -129,7 +173,7 @@ function drawBoth() {
 
 function init() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.translate(width / 2, height / 2);
+    ctx.translate(width / 2, outer.radius + outer.frameDistance + 10);
     multiply();
 }
 
@@ -226,6 +270,22 @@ function divide(animate = false) {
         inner.rotation = 0;
         drawBoth();
     }
+}
+
+function zoomIn() {
+    ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+    ctx.translate(0, outer.radius + outer.frameDistance);
+    ctx.scale(2, 2);
+    zoomLevel++;
+    drawBoth();
+}
+
+function zoomOut() {
+    ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+    ctx.scale(0.5, 0.5);
+    zoomLevel--;
+    ctx.translate(0, -(outer.radius + outer.frameDistance));
+    drawBoth();
 }
 
 window.onload = init;
