@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>This is going to be a circular slide rule app</title>
+    <title>Circular slide rule</title>
     <script src="script.js" defer></script>
     <link href="style.css" rel="stylesheet">
 </head>
@@ -33,8 +33,13 @@
     <form id="viewForm">
         <fieldset id="zoom-set">
             <legend>Zoom</legend>
-            <input type="button" id="multiply-button" value="+" onclick="zoomIn(true);">
-            <input type="button" id="divide-button" value="-" onclick="zoomOut(true);">
+            <input type="button" id="zoom-in-button" value="+" onclick="zoomIn(true);">
+            <input type="button" id="zoom-out-button" value="-" onclick="zoomOut(true);">
+        </fieldset>
+        <fieldset id="operating-set">
+            <legend>Operating</legend>
+            <label for="lock-butto">Lock wheels</legend>
+            <input type="checkbox" name="lock-button" id="lock-button">
         </fieldset>
     </form>
     <canvas class="appCanvas" id="csrCanvas">

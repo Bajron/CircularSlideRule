@@ -1,10 +1,8 @@
-// CSR - cricular slide rule
+// Materials:
+// - https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Drawing_graphics
+// - https://youtu.be/ZIQQvxSXLhI
 
 const PI = Math.PI
-
-function degToRad(degrees) {
-    return degrees * PI / 180;
-};
 
 var inner = { x: 0, y: 0, radius: 200, tickLength: -20, rotation: 0, frameDistance: -150 };
 var outer = { x: 0, y: 0, radius: 200, tickLength: 20, rotation: 0, frameDistance: 50 };
@@ -18,11 +16,16 @@ for (let l = 1; l < ticks.length; ++l) {
     ticks[l] = Math.log10(l + 1);
 }
 
+const edge =  2 * (outer.radius + outer.frameDistance + 10);
 const canvas = document.querySelector('#csrCanvas');
-const width = canvas.width = window.innerWidth;
-const height = canvas.height = 2 * (outer.radius + outer.frameDistance + 10);
+const width = canvas.width = edge;
+const height = canvas.height = edge;
+// const width = canvas.width = window.innerWidth;
+//const height = canvas.height = 2 * (outer.radius + outer.frameDistance + 10);
 
 const ctx = canvas.getContext('2d');
+const lockBox = document.querySelector('#lock-button');
+const resultBox = document.querySelector('#output');
 
 function prepareLabels(circle) {
     var labels = Array(9);
@@ -44,7 +47,7 @@ function prepareZoomTicks(circle, level = 1) {
     let baseFactor = Math.pow(10, fullRotations);
 
     let zoomedFactor = baseFactor / Math.pow(10, level - 1);
-    let result = Math.pow(10, -(outer.rotation / (2 * PI)))
+    let result = Math.pow(10, -(outer.rotation / (2 * PI)));
     let from = Math.floor(result / zoomedFactor);
 
     let smallerFactor = zoomedFactor / 10;
@@ -93,6 +96,9 @@ function drawCircleTicks(circle, ticks, tickScale = 1, labels = null) {
 }
 
 function drawOuterCircle(circle) {
+    // FIXME: here?
+    resultBox.value = Math.pow(10, -(outer.rotation / (2 * PI)));
+
     ctx.save();
 
     ctx.translate(circle.x, circle.y);
@@ -176,6 +182,76 @@ function init() {
     ctx.translate(width / 2, outer.radius + outer.frameDistance + 10);
     multiply();
 }
+
+var canvasClicked = null;
+
+function getClickFromEvent(ev) {
+    let t = ctx.getTransform();
+    let xIn = (ev.offsetX * width / canvas.clientWidth - t.e) / t.a;
+    let yIn = (ev.offsetY * height / canvas.clientHeight - t.f) / t.d;
+
+    let clickedInner = (xIn * xIn + yIn * yIn < Math.pow(inner.radius, 2));
+    let clickedOuter = (xIn * xIn + yIn * yIn < Math.pow(outer.radius + outer.frameDistance, 2));
+    let clickedPeg = (xIn * xIn + yIn * yIn < Math.pow(inner.radius + inner.frameDistance, 2));
+
+    return { 'inner': clickedInner, 'outer': clickedOuter, 'peg': clickedPeg, 'point': { 'x': xIn, 'y': yIn } };
+}
+
+function canvasMouseDown(ev) {
+    let p = getClickFromEvent(ev);
+    if (p.inner || p.outer) {
+        canvasClicked = p;
+        ev.preventDefault();
+    }
+}
+
+function updateFromEvent(ev) {
+    let p = getClickFromEvent(ev);
+    if (p.peg) {
+        return;
+    }
+
+    let angleWas = Math.atan2(canvasClicked.point.y, canvasClicked.point.x);
+    let angleIs = Math.atan2(p.point.y, p.point.x);
+    let d = angleWas - angleIs;
+
+    canvasClicked.point = p.point;
+
+    if (Math.abs(d) > PI / 4) {
+        // Ignore atan2 jumps
+        return;
+    }
+
+    if (lockBox.checked) {
+        inner.rotation -= d;
+        outer.rotation -= d;
+    } else if (canvasClicked.inner) {
+        inner.rotation -= d;
+    } else if (canvasClicked.outer) {
+        outer.rotation -= d;
+    }
+
+    drawBoth();
+}
+
+function canvasMouseUpdate(ev) {
+    if (canvasClicked === null) {
+        return;
+    }
+    updateFromEvent(ev);
+}
+
+function canvasMouseUp(ev) {
+    if (canvasClicked === null) {
+        return;
+    }
+    updateFromEvent(ev);
+    canvasClicked = null;
+}
+
+canvas.onmousedown = canvasMouseDown;
+canvas.onmousemove = canvasMouseUpdate;
+canvas.onmouseup = canvasMouseUp;
 
 function runAnimation() {
     if (animation.i >= animation.steps) {
@@ -289,6 +365,3 @@ function zoomOut() {
 }
 
 window.onload = init;
-
-// Materials:
-// - https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Drawing_graphics

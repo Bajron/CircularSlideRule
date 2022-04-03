@@ -1,6 +1,10 @@
 body {
     margin: 0;
-    overflow: hidden;
+    text-align: center;
+}
+
+form {
+    display: inline-block;
 }
 
 #inputForm {
@@ -8,8 +12,8 @@ body {
     margin: auto;
     text-align: center;
 }
-#inputForm fieldset {
-    border-radius: 25px;
+fieldset {
+    border-radius: 5px;
 }
 #inputForm #operation-set {
     width: 5em;
@@ -27,7 +31,7 @@ body {
 }
 
 #viewForm {
-    float: right;
+    /* float: right; */
     width: 60px;
     margin-right: 40px;
 }
@@ -38,10 +42,11 @@ body {
 }
 
 #csrCanvas {
-    width: 80%;
-    height: 80%;
+    height: 600px;
+    max-width: 600px;
     display: block;
     margin: auto;
+    padding: 0;
     border: 1px solid black;
     border-radius: 25px;
 }
