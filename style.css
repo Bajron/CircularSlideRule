@@ -3,50 +3,74 @@ body {
     text-align: center;
 }
 
-form {
+form, input, fieldset {
     display: inline-block;
+    vertical-align: middle;
 }
 
-#inputForm {
-    width: 600px;
-    margin: auto;
-    text-align: center;
+input[type=button], input[type=checkbox] {
+    cursor: pointer;
 }
+
 fieldset {
     border-radius: 5px;
 }
-#inputForm #operation-set {
-    width: 5em;
+
+#inputForm {
+    max-width: 600px;
+    width: 90%;
+    margin: auto;
     text-align: center;
-    display: inline-block;
-    vertical-align: middle;
+}
+#inputForm #operation-set {
+    width: 28%;
+    text-align: center;
+}
+#lhs,#rhs {
+    width: 22%;
+    height: 2em;
+}
+
+#operation-set input {
+    width: 80%;
 }
 #inputForm input {
-    display: inline-block;
-    vertical-align: middle;
     margin: 4px;
 }
+
 #inputForm label {
     display: none;
 }
 
+#output-set {
+    display: block;
+    width: 33%;
+    margin: auto;
+}
+
 #viewForm {
-    /* float: right; */
-    width: 60px;
-    margin-right: 40px;
+    display: block;
+}
+#viewForm input {
+    display: inline-block;
 }
 #zoom-set input[type=button] {
-    width: 40px;
-    height: 40px;
-    margin: 10px;
+    width: 3em;
+    height: 3em;
+    margin-left: 1em;
+    margin-right: 1em;
 }
 
 #csrCanvas {
-    height: 600px;
+    max-height: 600px;
     max-width: 600px;
+    width: 80%;
     display: block;
     margin: auto;
     padding: 0;
-    border: 1px solid black;
-    border-radius: 25px;
+    cursor: grab;
+}
+
+#csrCanvas.active {
+    cursor: grabbing;
 }

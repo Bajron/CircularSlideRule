@@ -4,15 +4,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circular slide rule</title>
+    <title>Circular slide rule (work in progress)</title>
     <script src="script.js" defer></script>
     <link href="style.css" rel="stylesheet">
 </head>
 
 <body>
-    <p>This is still a work in progress :) I think this one will be a toy project for a while.</p>
-    <p>Checkout <a href="https://youtu.be/ZIQQvxSXLhI">the inspiration from Mathlogger</a> 
-        or the <a href="https://github.com/Bajron/CircularSlideRule">code on GitHub</a>(it is a mess ;))</p>
     <form id="inputForm">
         <fieldset>
             <label for="lhs">Left</label>
@@ -30,6 +27,8 @@
                 <legend>Output</legend>
                 <label for="output">Result</label>
                 <input type="input" readonly="readonly" name="output" id="output" value="1">
+                <label for="output-lower">Lower wheel</label>
+                <input type="input" readonly="readonly" name="output-lower" id="output-lower" value="1">
             </fieldset>
         </fieldset>
     </form>
@@ -48,7 +47,10 @@
     <canvas class="appCanvas" id="csrCanvas">
         <p>Circular sliderule goes here. If you see this, the technology is still not there, sorry ;(</p>
     </canvas>
-
+    <hr>
+    <p>This is still a work in progress :) I think this one will be a toy project for a while.</p>
+    <p>Checkout <a href="https://youtu.be/ZIQQvxSXLhI">the inspiration from Mathologer</a> 
+        or the <a href="https://github.com/Bajron/CircularSlideRule">code on GitHub</a>(it is a mess ;))</p>
 </body>
 
 </html>

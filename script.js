@@ -2,13 +2,15 @@
 // - https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Drawing_graphics
 // - https://youtu.be/ZIQQvxSXLhI
 
-const PI = Math.PI
+const PI = Math.PI;
+const ANIMATION_CYCLE = 120;
+const MAX_SPEED = PI / ANIMATION_CYCLE;
 
 var inner = { x: 0, y: 0, radius: 200, tickLength: -20, rotation: 0, frameDistance: -150 };
 var outer = { x: 0, y: 0, radius: 200, tickLength: 20, rotation: 0, frameDistance: 50 };
 /// log2 of actual scaling
 var zoomLevel = 0;
-var animation = { i: 0, steps: 240, pairs: new Array() };
+var animation = { i: 0, steps: 0, pairs: new Array() };
 
 var ticks = Array(9);
 ticks[0] = 0;
@@ -16,7 +18,7 @@ for (let l = 1; l < ticks.length; ++l) {
     ticks[l] = Math.log10(l + 1);
 }
 
-const edge =  2 * (outer.radius + outer.frameDistance + 10);
+const edge = 2 * (outer.radius + outer.frameDistance + 10);
 const canvas = document.querySelector('#csrCanvas');
 const width = canvas.width = edge;
 const height = canvas.height = edge;
@@ -26,6 +28,7 @@ const height = canvas.height = edge;
 const ctx = canvas.getContext('2d');
 const lockBox = document.querySelector('#lock-button');
 const resultBox = document.querySelector('#output');
+const resultInnerBox= document.querySelector('#output-lower');
 
 function prepareLabels(circle) {
     var labels = Array(9);
@@ -47,7 +50,7 @@ function prepareZoomTicks(circle, level = 1) {
     let baseFactor = Math.pow(10, fullRotations);
 
     let zoomedFactor = baseFactor / Math.pow(10, level - 1);
-    let result = Math.pow(10, -(outer.rotation / (2 * PI)));
+    let result = Math.pow(10, -(circle.rotation / (2 * PI)));
     let from = Math.floor(result / zoomedFactor);
 
     let smallerFactor = zoomedFactor / 10;
@@ -95,9 +98,31 @@ function drawCircleTicks(circle, ticks, tickScale = 1, labels = null) {
     }
 }
 
+function drawMoreTicks(circle) {
+    ctx.save();
+    if (zoomLevel < 1) {
+        let z = prepareZoomTicks(circle);
+        drawCircleTicks(circle, z.ticks);
+    } else {
+        for (let zl = 1; zl <= zoomLevel; ++zl) {
+            let z = prepareZoomTicks(circle, zl);
+            let tickScale = Math.pow(3 / 4, zl);
+            ctx.font = Math.round(10 * Math.pow(0.4, zl), 2) + 'px sans-serif';
+            ctx.lineWidth = 1 / Math.pow(2, zl);
+
+            if (zl % 2 == 1) {
+                drawCircleTicks(circle, z.ticks, tickScale, z.labels);
+            } else {
+                drawCircleTicks(circle, z.ticks, tickScale,);
+            }
+        }
+    }
+    ctx.restore();
+}
+
 function drawOuterCircle(circle) {
     // FIXME: here?
-    resultBox.value = Math.pow(10, -(outer.rotation / (2 * PI)));
+    resultBox.value = Math.pow(10, -(circle.rotation / (2 * PI)));
 
     ctx.save();
 
@@ -115,39 +140,28 @@ function drawOuterCircle(circle) {
 
     ctx.strokeStyle = 'black';
     ctx.fillStyle = 'black';
-    ctx.font = '10px sans-serif';
+    ctx.font = '12px sans-serif';
     drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
 
-    ctx.save();
-    if (zoomLevel < 1) {
-        let z = prepareZoomTicks(outer);
-        drawCircleTicks(circle, z.ticks);
-    } else {
-        for (let zl = 1; zl <= zoomLevel; ++zl) {
-            let z = prepareZoomTicks(outer, zl);
-            let tickScale = Math.pow(3 / 4, zl);
-            ctx.font = Math.round(10 * Math.pow(0.6, zl), 2) + 'px sans-serif';
-            ctx.lineWidth = 1 / Math.pow(2, zl);
-
-            if (zl % 2 == 1) {
-                drawCircleTicks(circle, z.ticks, tickScale, z.labels);
-            } else {
-                drawCircleTicks(circle, z.ticks, tickScale,);
-            }
-        }
-    }
-    ctx.restore();
+    drawMoreTicks(circle);
 
     // Result guide
-    ctx.beginPath();
-    ctx.moveTo(0, -(circle.radius + circle.frameDistance));
-    ctx.lineTo(0, -(circle.radius + circle.frameDistance - circle.tickLength / 2));
-    ctx.stroke();
+    if (zoomLevel >= 0) {
+        ctx.lineWidth = 1 / (zoomLevel + 1);
+        ctx.beginPath();
+        let guideStart = -(circle.radius + circle.frameDistance);
+        ctx.moveTo(0, guideStart);
+        ctx.lineTo(0, guideStart + (zoomLevel + 1) * circle.tickLength / 2);
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
 
 function drawInnerCircle(circle) {
+    // FIXME: here?
+    resultInnerBox.value = Math.pow(10, -(circle.rotation / (2 * PI)));
+
     ctx.save();
 
     ctx.translate(circle.x, circle.y);
@@ -166,6 +180,7 @@ function drawInnerCircle(circle) {
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'red';
     drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
+    drawMoreTicks(circle);
     ctx.restore();
 }
 
@@ -208,6 +223,7 @@ function canvasMouseDown(ev) {
     let p = getClickFromEvent(ev);
     if (p.inner || p.outer) {
         canvasClicked = p;
+        canvas.classList.add("active");
         ev.preventDefault();
     }
 }
@@ -253,6 +269,7 @@ function canvasMouseUp(ev) {
         return;
     }
     updateFromEvent(ev);
+    canvas.classList.remove("active");
     canvasClicked = null;
 }
 
@@ -283,7 +300,10 @@ function newAnimation() {
     animation = { i: 0, steps: 0, pairs: new Array() };
 }
 
-function setupAnimation(oFrom, oTo, iFrom, iTo, steps) {
+function setupAnimation(oFrom, oTo, iFrom, iTo, minSteps, maxSpeed = 0) {
+    let maxRotation = Math.max(Math.abs(oTo - oFrom), Math.abs(iTo - iFrom));
+    let maxSpeedSteps = maxSpeed != 0 ? Math.round(maxRotation / maxSpeed) : minSteps;
+    let steps = Math.max(minSteps, maxSpeedSteps);
     let outerStep = (oTo - oFrom) / steps;
     let innerStep = (iTo - iFrom) / steps;
 
@@ -302,7 +322,7 @@ function setupAnimation(oFrom, oTo, iFrom, iTo, steps) {
 function resetCircles(animate = false) {
     if (animate) {
         newAnimation();
-        setupAnimation(outer.rotation, 0, inner.rotation, 0, 120);
+        setupAnimation(outer.rotation, 0, inner.rotation, 0, ANIMATION_CYCLE);
         requestAnimationFrame(runAnimation);
     } else {
         outer.rotation = 0;
@@ -324,8 +344,8 @@ function multiply(animate = false) {
     if (animate) {
         newAnimation();
         let rotateBoth = -2 * PI * Math.log10(rhsValue);
-        setupAnimation(outer.rotation, rotateBoth, inner.rotation, rotateBoth, 120);
-        setupAnimation(rotateBoth, rotateBoth - 2 * PI * Math.log10(lhsValue), rotateBoth, rotateBoth, 120);
+        setupAnimation(outer.rotation, rotateBoth, inner.rotation, rotateBoth, ANIMATION_CYCLE, MAX_SPEED);
+        setupAnimation(rotateBoth, rotateBoth - 2 * PI * Math.log10(lhsValue), rotateBoth, rotateBoth, ANIMATION_CYCLE, MAX_SPEED);
         requestAnimationFrame(runAnimation);
     } else {
         inner.rotation = -2 * PI * Math.log10(rhsValue);
@@ -348,8 +368,8 @@ function divide(animate = false) {
         newAnimation();
         let rotateOuter = -2 * PI * Math.log10(lhsValue);
         let rotateInner = -2 * PI * Math.log10(rhsValue);
-        setupAnimation(outer.rotation, rotateOuter, inner.rotation, rotateInner, 120);
-        setupAnimation(rotateOuter, rotateOuter - rotateInner, rotateInner, 0, 120);
+        setupAnimation(outer.rotation, rotateOuter, inner.rotation, rotateInner, ANIMATION_CYCLE, MAX_SPEED);
+        setupAnimation(rotateOuter, rotateOuter - rotateInner, rotateInner, 0, ANIMATION_CYCLE, MAX_SPEED);
         requestAnimationFrame(runAnimation);
     } else {
         outer.rotation = -2 * PI * Math.log10(lhsValue) + 2 * PI * Math.log10(rhsValue);
@@ -360,7 +380,7 @@ function divide(animate = false) {
 
 function zoomIn() {
     ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
-    ctx.translate(0, outer.radius + outer.frameDistance);
+    ctx.translate(0, outer.radius + outer.frameDistance - 10);
     ctx.scale(2, 2);
     zoomLevel++;
     drawBoth();
@@ -370,7 +390,7 @@ function zoomOut() {
     ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
     ctx.scale(0.5, 0.5);
     zoomLevel--;
-    ctx.translate(0, -(outer.radius + outer.frameDistance));
+    ctx.translate(0, -(outer.radius + outer.frameDistance - 10));
     drawBoth();
 }
 
