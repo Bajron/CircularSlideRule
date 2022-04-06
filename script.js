@@ -6,16 +6,56 @@ const PI = Math.PI;
 const ANIMATION_CYCLE = 120;
 const MAX_SPEED = PI / ANIMATION_CYCLE;
 
-var inner = { x: 0, y: 0, radius: 200, tickLength: -20, rotation: 0, frameDistance: -150 };
-var outer = { x: 0, y: 0, radius: 200, tickLength: 20, rotation: 0, frameDistance: 50 };
-/// log2 of actual scaling
+function setupCircle(circle) {
+    circle.radix = 10;
+    circle.log = function (n) {
+        return Math.log(n) / Math.log(this.radix);
+    };
+    circle.getValue = function () {
+        return Math.pow(this.radix, -(this.rotation / (2 * PI)));
+    }
+    return circle;
+}
+
+var inner = setupCircle({ x: 0, y: 0, radius: 200, tickLength: -20, rotation: 0, frameDistance: -150, radix: 10 });
+var outer = setupCircle({ x: 0, y: 0, radius: 200, tickLength: 20, rotation: 0, frameDistance: 50, radix: 10 });
+
+/// log2 of actual scaling 
 var zoomLevel = 0;
 var animation = { i: 0, steps: 0, pairs: new Array() };
 
-var ticks = Array(9);
-ticks[0] = 0;
-for (let l = 1; l < ticks.length; ++l) {
-    ticks[l] = Math.log10(l + 1);
+function prepareTicks(circle) {
+    var ticks = Array(circle.radix - 1);
+    ticks[0] = 0;
+    for (let l = 1; l < ticks.length; ++l) {
+        ticks[l] = circle.log(l + 1);
+    }
+    return ticks;
+}
+
+function changeLog(animate) {
+    var newRadix = outer.radix;
+    let bases = [8, 10, 16];
+    for (k in bases) {
+        if (document.querySelector('#log' + bases[k] + '-button').checked) {
+            newRadix = bases[k];
+        }
+    }
+
+    var oValue = outer.getValue();
+    var iValue = inner.getValue();
+
+    outer.radix = inner.radix = newRadix;
+
+    if (animate) {
+        drawBoth();
+        newAnimation();
+        setupAnimation(outer.rotation, -2 * PI * outer.log(oValue), inner.rotation, -2 * PI * inner.log(iValue), ANIMATION_CYCLE);
+        requestAnimationFrame(runAnimation);
+    } else {
+        outer.rotation = -2 * PI * outer.log(oValue);
+        inner.rotation = -2 * PI * inner.log(iValue);
+    }
 }
 
 const edge = 2 * (outer.radius + outer.frameDistance + 10);
@@ -28,41 +68,49 @@ const height = canvas.height = edge;
 const ctx = canvas.getContext('2d');
 const lockBox = document.querySelector('#lock-button');
 const resultBox = document.querySelector('#output');
-const resultInnerBox= document.querySelector('#output-lower');
+const resultInnerBox = document.querySelector('#output-lower');
 
 function prepareLabels(circle) {
-    var labels = Array(9);
+    var labels = Array(circle.radix - 1);
     let rotations = -circle.rotation / (2 * PI);
     let fullRotations = Math.floor(rotations);
-    let factor = Math.pow(10, fullRotations);
+    let factor = Math.pow(circle.radix, fullRotations);
     let show = factor < 1 ? -fullRotations : 0;
 
     for (let l = 0; l < labels.length; ++l) {
-        labels[l] = ((l + 1) * factor).toFixed(show).toString(10);
+        if (circle.radix == 10) {
+            labels[l] = ((l + 1) * factor).toFixed(show).toString(circle.radix);
+        } else {
+            labels[l] = ((l + 1) * factor).toString(circle.radix);
+        }
     }
     return labels;
 }
 
 function prepareZoomTicks(circle, level = 1) {
-    var labels = Array(9);
+    var labels = Array(circle.radix - 1);
     let rotations = -circle.rotation / (2 * PI);
     let fullRotations = Math.floor(rotations);
-    let baseFactor = Math.pow(10, fullRotations);
+    let baseFactor = Math.pow(circle.radix, fullRotations);
 
-    let zoomedFactor = baseFactor / Math.pow(10, level - 1);
-    let result = Math.pow(10, -(circle.rotation / (2 * PI)));
+    let zoomedFactor = baseFactor / Math.pow(circle.radix, level - 1);
+    let result = Math.pow(circle.radix, -(circle.rotation / (2 * PI)));
     let from = Math.floor(result / zoomedFactor);
 
-    let smallerFactor = zoomedFactor / 10;
+    let smallerFactor = zoomedFactor / circle.radix;
     let show = smallerFactor < 1 ? (-fullRotations + level) : 0;
 
-    let divisions = (level > 2) ? 2 : 10;
+    let divisions = (level > 2) ? 2 : circle.radix;
 
     var ticks = Array(divisions - 1);
     var labels = Array(divisions - 1);
     for (let l = 0; l < ticks.length; ++l) {
-        ticks[l] = Math.log10(from + (l + 1) / divisions);
-        labels[l] = (from * zoomedFactor + (l + 1) * zoomedFactor / divisions).toFixed(show).toString(10);
+        ticks[l] = circle.log(from + (l + 1) / divisions);
+        if (circle.radix == 10) {
+            labels[l] = (from * zoomedFactor + (l + 1) * zoomedFactor / divisions).toFixed(show).toString(circle.radix);
+        } else {
+            labels[l] = (from * zoomedFactor + (l + 1) * zoomedFactor / divisions).toString(circle.radix);
+        }
     }
 
     return { 'ticks': ticks, 'labels': labels };
@@ -122,7 +170,7 @@ function drawMoreTicks(circle) {
 
 function drawOuterCircle(circle) {
     // FIXME: here?
-    resultBox.value = Math.pow(10, -(circle.rotation / (2 * PI)));
+    resultBox.value = circle.getValue();
 
     ctx.save();
 
@@ -141,7 +189,7 @@ function drawOuterCircle(circle) {
     ctx.strokeStyle = 'black';
     ctx.fillStyle = 'black';
     ctx.font = '12px sans-serif';
-    drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
+    drawCircleTicks(circle, prepareTicks(circle), 1, prepareLabels(circle));
 
     drawMoreTicks(circle);
 
@@ -160,7 +208,7 @@ function drawOuterCircle(circle) {
 
 function drawInnerCircle(circle) {
     // FIXME: here?
-    resultInnerBox.value = Math.pow(10, -(circle.rotation / (2 * PI)));
+    resultInnerBox.value = circle.getValue();
 
     ctx.save();
 
@@ -179,7 +227,7 @@ function drawInnerCircle(circle) {
 
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'red';
-    drawCircleTicks(circle, ticks, 1, prepareLabels(circle));
+    drawCircleTicks(circle, prepareTicks(circle), 1, prepareLabels(circle));
     drawMoreTicks(circle);
     ctx.restore();
 }
@@ -343,13 +391,13 @@ function multiply(animate = false) {
 
     if (animate) {
         newAnimation();
-        let rotateBoth = -2 * PI * Math.log10(rhsValue);
+        let rotateBoth = -2 * PI * inner.log(rhsValue);
         setupAnimation(outer.rotation, rotateBoth, inner.rotation, rotateBoth, ANIMATION_CYCLE, MAX_SPEED);
-        setupAnimation(rotateBoth, rotateBoth - 2 * PI * Math.log10(lhsValue), rotateBoth, rotateBoth, ANIMATION_CYCLE, MAX_SPEED);
+        setupAnimation(rotateBoth, rotateBoth - 2 * PI * outer.log(lhsValue), rotateBoth, rotateBoth, ANIMATION_CYCLE, MAX_SPEED);
         requestAnimationFrame(runAnimation);
     } else {
-        inner.rotation = -2 * PI * Math.log10(rhsValue);
-        outer.rotation = inner.rotation + -2 * PI * Math.log10(lhsValue);
+        inner.rotation = -2 * PI * inner.log(rhsValue);
+        outer.rotation = inner.rotation + -2 * PI * outer.log(lhsValue);
         drawBoth();
     }
 }
@@ -366,13 +414,13 @@ function divide(animate = false) {
 
     if (animate) {
         newAnimation();
-        let rotateOuter = -2 * PI * Math.log10(lhsValue);
-        let rotateInner = -2 * PI * Math.log10(rhsValue);
+        let rotateOuter = -2 * PI * outer.log(lhsValue);
+        let rotateInner = -2 * PI * inner.log(rhsValue);
         setupAnimation(outer.rotation, rotateOuter, inner.rotation, rotateInner, ANIMATION_CYCLE, MAX_SPEED);
         setupAnimation(rotateOuter, rotateOuter - rotateInner, rotateInner, 0, ANIMATION_CYCLE, MAX_SPEED);
         requestAnimationFrame(runAnimation);
     } else {
-        outer.rotation = -2 * PI * Math.log10(lhsValue) + 2 * PI * Math.log10(rhsValue);
+        outer.rotation = -2 * PI * outer.log(lhsValue) + 2 * PI * inner.log(rhsValue);
         inner.rotation = 0;
         drawBoth();
     }

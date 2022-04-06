@@ -40,15 +40,22 @@
         </fieldset>
         <fieldset id="operating-set">
             <legend>Operating</legend>
-            <label for="lock-butto">Lock wheels</legend>
+            <label for="lock-button">Lock wheels</legend>
             <input type="checkbox" name="lock-button" id="lock-button">
+            <br>
+            <label for="log8-button">Log8</legend>
+            <input type="radio" name="log-button" id="log8-button" value="8" onchange="changeLog(true);">
+            <label for="log10-button">Log10</legend>
+            <input type="radio" name="log-button" id="log10-button" value="10" onchange="changeLog(true);" checked>
+            <label for="log16-button">Log16</legend>
+            <input type="radio" name="log-button" id="log16-button" value="16" onchange="changeLog(true);">
         </fieldset>
     </form>
     <canvas class="appCanvas" id="csrCanvas">
         <p>Circular sliderule goes here. If you see this, the technology is still not there, sorry ;(</p>
     </canvas>
     <hr>
-    <p>This is still a work in progress :) I think this one will be a toy project for a while.</p>
+    <p>Failed with zooming... But it was fun! :)</p>
     <p>Checkout <a href="https://youtu.be/ZIQQvxSXLhI">the inspiration from Mathologer</a> 
         or the <a href="https://github.com/Bajron/CircularSlideRule">code on GitHub</a>(it is a mess ;))</p>
 </body>
